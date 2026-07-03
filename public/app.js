@@ -16,6 +16,7 @@ const state = {
 
 const els = {
   date: document.querySelector('#journal-date'),
+  mealSummary: document.querySelector('#meal-summary'),
   drinkSummary: document.querySelector('#drink-summary'),
   symptomSummary: document.querySelector('#symptom-summary'),
   formPanel: document.querySelector('#form-panel'),
@@ -27,6 +28,8 @@ const els = {
   entryTitle: document.querySelector('#entry-title'),
   titleLabel: document.querySelector('#title-label'),
   titleFields: document.querySelector('#title-fields'),
+  mealFields: document.querySelector('#meal-fields'),
+  mealName: document.querySelector('#meal-name'),
   entryDetails: document.querySelector('#entry-details'),
   drinkFields: document.querySelector('#drink-fields'),
   drinkOptions: document.querySelector('#drink-options'),
@@ -43,9 +46,9 @@ const els = {
 const formCopy = {
   meal: {
     heading: 'Add meal',
-    titleLabel: 'Meal name',
-    placeholder: 'Breakfast, lunch, dinner, snack…',
-    notes: 'What did you eat? Add ingredients, portions, how you felt, or anything you want to remember.',
+    titleLabel: 'Other meal name',
+    placeholder: 'Brunch, late snack, post-run meal…',
+    notes: 'What did you eat?',
   },
   drink: {
     heading: 'Add drink',
@@ -91,6 +94,7 @@ function init() {
     loadDay();
   });
 
+  els.mealName.addEventListener('change', updateMealTitleVisibility);
   els.entryRating.addEventListener('input', () => {
     els.ratingValue.textContent = els.entryRating.value;
   });
@@ -149,10 +153,15 @@ function getEventsForDate(date) {
 }
 
 function buildSummary(events) {
+  const mealNames = [];
   const drinkMap = new Map();
   const symptomMap = new Map();
 
   events.forEach((event) => {
+    if (event.eventType === 'meal') {
+      mealNames.push(event.title);
+    }
+
     if (event.eventType === 'drink') {
       drinkMap.set(event.title, (drinkMap.get(event.title) || 0) + Number(event.quantityMl || 0));
     }
@@ -164,14 +173,18 @@ function buildSummary(events) {
   });
 
   return {
+    meals: mealNames,
     drinkTotals: [...drinkMap.entries()].map(([title, quantityMl]) => ({ title, quantityMl })),
     symptoms: [...symptomMap.entries()].map(([title, highestRating]) => ({ title, highestRating })),
   };
 }
 
 function renderSummary(summary) {
+  const meals = summary.meals || [];
   const drinkTotals = summary.drinkTotals || [];
   const symptoms = summary.symptoms || [];
+
+  els.mealSummary.textContent = meals.length ? compactList(meals) : 'No meals yet';
 
   els.drinkSummary.textContent = drinkTotals.length
     ? drinkTotals.map((drink) => `${drink.title}: ${formatMl(drink.quantityMl)}`).join(' · ')
@@ -180,6 +193,12 @@ function renderSummary(summary) {
   els.symptomSummary.textContent = symptoms.length
     ? symptoms.map((symptom) => `${symptom.title}: ${symptom.highestRating}/10`).join(' · ')
     : 'Nothing logged';
+}
+
+function compactList(items) {
+  const visible = items.slice(0, 3);
+  const remaining = items.length - visible.length;
+  return `${visible.join(' • ')}${remaining > 0 ? ` +${remaining} more` : ''}`;
 }
 
 function renderTimeline(events) {
@@ -252,14 +271,20 @@ function openForm(type) {
   els.entryTitle.placeholder = copy.placeholder;
   els.entryDetails.placeholder = copy.notes;
 
+  els.mealFields.classList.toggle('hidden', type !== 'meal');
   els.drinkFields.classList.toggle('hidden', type !== 'drink');
   els.ratingFields.classList.toggle('hidden', !['symptom', 'checkin'].includes(type));
-  els.titleFields.classList.toggle('hidden', type === 'drink');
+  els.titleFields.classList.toggle('hidden', type === 'drink' || type === 'meal');
 
   [...els.drinkOptions.children].forEach((button) => button.classList.remove('selected'));
 
   if (type === 'drink' && state.drinks[0]) {
     selectDrink(state.drinks[0]);
+  }
+
+  if (type === 'meal') {
+    els.mealName.value = 'Breakfast';
+    updateMealTitleVisibility();
   }
 
   if (type === 'checkin') {
@@ -269,6 +294,14 @@ function openForm(type) {
   els.formPanel.classList.remove('hidden');
   els.entryTime.focus({ preventScroll: true });
   els.formPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function updateMealTitleVisibility() {
+  const isOther = els.mealName.value === 'Other';
+  els.titleFields.classList.toggle('hidden', !isOther);
+  if (!isOther) {
+    els.entryTitle.value = '';
+  }
 }
 
 function closeForm() {
@@ -291,6 +324,10 @@ function saveEntry(event) {
     quantityMl: null,
     createdAt: new Date().toISOString(),
   };
+
+  if (eventType === 'meal') {
+    payload.title = els.mealName.value === 'Other' ? els.entryTitle.value.trim() : els.mealName.value;
+  }
 
   if (eventType === 'drink') {
     if (!state.selectedDrink) {
