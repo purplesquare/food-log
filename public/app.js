@@ -12,6 +12,26 @@ const state = {
   entryType: 'meal',
   drinks: defaultDrinks,
   selectedDrink: null,
+  currentView: 'all',
+};
+
+const viewCopy = {
+  all: {
+    title: 'Timeline',
+    empty: 'No entries yet. Add a meal, drink, symptom, or check-in to start your journal.',
+  },
+  meal: {
+    title: 'Meals',
+    empty: 'No meals logged for this day yet.',
+  },
+  drink: {
+    title: 'Drinks',
+    empty: 'No drinks logged for this day yet.',
+  },
+  symptom: {
+    title: 'Symptoms',
+    empty: 'No symptoms logged for this day yet.',
+  },
 };
 
 const els = {
@@ -19,6 +39,7 @@ const els = {
   mealSummary: document.querySelector('#meal-summary'),
   drinkSummary: document.querySelector('#drink-summary'),
   symptomSummary: document.querySelector('#symptom-summary'),
+  summaryCards: document.querySelectorAll('[data-filter]'),
   formPanel: document.querySelector('#form-panel'),
   formTitle: document.querySelector('#form-title'),
   closeForm: document.querySelector('#close-form'),
@@ -38,8 +59,9 @@ const els = {
   entryRating: document.querySelector('#entry-rating'),
   ratingValue: document.querySelector('#rating-value'),
   formError: document.querySelector('#form-error'),
+  timelineTitle: document.querySelector('#timeline-title'),
+  showAll: document.querySelector('#show-all'),
   timeline: document.querySelector('#timeline'),
-  refresh: document.querySelector('#refresh'),
   template: document.querySelector('#event-template'),
 };
 
@@ -87,8 +109,12 @@ function init() {
     button.addEventListener('click', () => openForm(button.dataset.openForm));
   });
 
+  els.summaryCards.forEach((card) => {
+    card.addEventListener('click', () => setView(card.dataset.filter));
+  });
+
+  els.showAll.addEventListener('click', () => setView('all'));
   els.closeForm.addEventListener('click', closeForm);
-  els.refresh.addEventListener('click', loadDay);
   els.date.addEventListener('change', () => {
     state.date = els.date.value || today();
     loadDay();
@@ -126,6 +152,12 @@ function selectDrink(drink) {
   [...els.drinkOptions.children].forEach((button) => {
     button.classList.toggle('selected', button.textContent.includes(drink.name));
   });
+}
+
+function setView(view) {
+  state.currentView = view || 'all';
+  loadDay();
+  els.timeline.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function loadDay() {
@@ -202,17 +234,28 @@ function compactList(items) {
 }
 
 function renderTimeline(events) {
+  const view = viewCopy[state.currentView] || viewCopy.all;
+  const visibleEvents = state.currentView === 'all'
+    ? events
+    : events.filter((event) => event.eventType === state.currentView);
+
+  els.timelineTitle.textContent = view.title;
+  els.showAll.classList.toggle('hidden', state.currentView === 'all');
+  els.summaryCards.forEach((card) => {
+    card.classList.toggle('selected-summary', card.dataset.filter === state.currentView);
+  });
+
   els.timeline.innerHTML = '';
 
-  if (!events.length) {
+  if (!visibleEvents.length) {
     const empty = document.createElement('p');
     empty.className = 'empty-state';
-    empty.textContent = 'No entries yet. Add a meal, drink, symptom, or check-in to start your journal.';
+    empty.textContent = view.empty;
     els.timeline.append(empty);
     return;
   }
 
-  events.forEach((event) => {
+  visibleEvents.forEach((event) => {
     const node = els.template.content.cloneNode(true);
     const article = node.querySelector('.timeline-item');
     const time = node.querySelector('.timeline-time');
@@ -222,7 +265,7 @@ function renderTimeline(events) {
     const deleteButton = node.querySelector('.delete-button');
 
     time.textContent = event.eventTime;
-    title.textContent = `${eventIcons[event.eventType] || '•'} ${event.title}`;
+    title.textContent = formatEventTitle(event);
     meta.textContent = describeMeta(event);
     details.textContent = event.details || '';
     details.hidden = !event.details;
@@ -239,7 +282,29 @@ function renderTimeline(events) {
   });
 }
 
+function formatEventTitle(event) {
+  if (state.currentView === 'all') {
+    return `${eventIcons[event.eventType] || '•'} ${event.title}`;
+  }
+
+  if (event.eventType === 'drink') {
+    return `${eventIcons.drink} ${event.title}${event.quantityMl ? ` · ${formatMl(event.quantityMl)}` : ''}`;
+  }
+
+  if (event.eventType === 'symptom') {
+    return `${eventIcons.symptom} ${event.title}${event.rating !== null && event.rating !== undefined ? ` · ${event.rating}/10` : ''}`;
+  }
+
+  return `${eventIcons[event.eventType] || '•'} ${event.title}`;
+}
+
 function describeMeta(event) {
+  if (state.currentView !== 'all') {
+    if (event.eventType === 'meal') return event.details ? 'What you ate' : 'Meal';
+    if (event.eventType === 'drink') return 'Drink';
+    if (event.eventType === 'symptom') return 'Symptom';
+  }
+
   const pieces = [labelForType(event.eventType)];
   if (event.quantityMl) pieces.push(formatMl(event.quantityMl));
   if (event.rating !== null && event.rating !== undefined) pieces.push(`${event.rating}/10`);
