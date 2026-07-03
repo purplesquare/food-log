@@ -74,6 +74,19 @@
             </label>
           </div>
 
+          <div id="meal-fields" class="hidden">
+            <label>
+              Meal name
+              <select id="meal-name">
+                <option value="Breakfast">Breakfast</option>
+                <option value="Lunch">Lunch</option>
+                <option value="Dinner">Dinner</option>
+                <option value="Snack">Snack</option>
+                <option value="Other">Other</option>
+              </select>
+            </label>
+          </div>
+
           <div id="title-fields">
             <label>
               <span id="title-label">Title</span>
@@ -94,7 +107,7 @@
             <textarea id="entry-details" rows="4" placeholder="Add foods, symptoms, context, sleep, stress, or anything useful."></textarea>
           </label>
 
-          <button class="primary-button" type="submit">Save to journal</button>
+          <button class="primary-button" type="submit">Save</button>
           <p id="form-error" class="error-message" role="alert"></p>
         </form>
       </section>
