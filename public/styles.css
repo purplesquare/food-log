@@ -1,0 +1,392 @@
+:root {
+  color-scheme: light dark;
+  --background: #f5f1ea;
+  --surface: #fffaf2;
+  --surface-strong: #ffffff;
+  --text: #1f2a24;
+  --muted: #66736b;
+  --accent: #315947;
+  --accent-soft: #dbe9df;
+  --border: rgba(49, 89, 71, 0.16);
+  --danger: #9b2c2c;
+  --shadow: 0 18px 45px rgba(41, 55, 47, 0.12);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(219, 233, 223, 0.9), transparent 34rem),
+    var(--background);
+  color: var(--text);
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.app-shell {
+  width: min(100%, 46rem);
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.hero {
+  padding: 1.5rem;
+  border-radius: 2rem;
+  background: linear-gradient(145deg, var(--accent), #1f3d32);
+  color: #fffaf2;
+  box-shadow: var(--shadow);
+}
+
+.eyebrow {
+  margin: 0 0 0.35rem;
+  color: rgba(255, 250, 242, 0.78);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  margin-bottom: 1.25rem;
+  font-size: clamp(2.2rem, 12vw, 4rem);
+  line-height: 0.95;
+  letter-spacing: -0.06em;
+}
+
+h2 {
+  margin-bottom: 1rem;
+  font-size: 1.15rem;
+}
+
+.date-picker {
+  display: grid;
+  gap: 0.45rem;
+  color: rgba(255, 250, 242, 0.84);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.date-picker input,
+label input,
+label textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  padding: 0.9rem 1rem;
+  background: var(--surface-strong);
+  color: var(--text);
+}
+
+.date-picker input {
+  background: rgba(255, 250, 242, 0.96);
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.8rem;
+  margin: 1rem 0;
+}
+
+.summary-card,
+.panel {
+  border: 1px solid var(--border);
+  background: rgba(255, 250, 242, 0.88);
+  box-shadow: 0 10px 30px rgba(41, 55, 47, 0.08);
+  backdrop-filter: blur(16px);
+}
+
+.summary-card {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+  padding: 1rem;
+  border-radius: 1.3rem;
+}
+
+.summary-icon {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 1rem;
+  background: var(--accent-soft);
+  font-size: 1.4rem;
+}
+
+.summary-label {
+  margin-bottom: 0.2rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.summary-value {
+  margin-bottom: 0;
+  font-weight: 800;
+}
+
+.panel {
+  margin: 1rem 0;
+  padding: 1rem;
+  border-radius: 1.5rem;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.quick-actions,
+.option-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.action-card,
+.option-button,
+.primary-button,
+.ghost-button,
+.delete-button {
+  border: 0;
+  border-radius: 1rem;
+  font-weight: 800;
+}
+
+.action-card {
+  display: grid;
+  gap: 0.5rem;
+  min-height: 6rem;
+  place-items: center;
+  padding: 1rem;
+  background: var(--surface-strong);
+  color: var(--text);
+  border: 1px solid var(--border);
+  font-size: 1.7rem;
+}
+
+.action-card span {
+  font-size: 0.92rem;
+}
+
+.action-card:active,
+.option-button:active,
+.primary-button:active {
+  transform: translateY(1px) scale(0.99);
+}
+
+form {
+  display: grid;
+  gap: 1rem;
+}
+
+label,
+.field-label {
+  display: grid;
+  gap: 0.45rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+textarea {
+  resize: vertical;
+}
+
+.option-button {
+  padding: 0.9rem;
+  background: var(--surface-strong);
+  color: var(--text);
+  border: 1px solid var(--border);
+  text-align: left;
+}
+
+.option-button.selected {
+  background: var(--accent);
+  color: #fffaf2;
+}
+
+.rating-scale {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.primary-button {
+  padding: 1rem 1.2rem;
+  background: var(--accent);
+  color: #fffaf2;
+}
+
+.ghost-button {
+  padding: 0.65rem 0.85rem;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.delete-button {
+  padding: 0.45rem 0.65rem;
+  background: transparent;
+  color: var(--danger);
+}
+
+.hidden {
+  display: none !important;
+}
+
+.error-message {
+  min-height: 1.2rem;
+  margin-bottom: 0;
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.timeline {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.empty-state {
+  margin: 0;
+  padding: 1.2rem;
+  border: 1px dashed var(--border);
+  border-radius: 1.2rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+.timeline-item {
+  display: grid;
+  grid-template-columns: 3.8rem 1fr;
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.timeline-time {
+  padding-top: 0.85rem;
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 800;
+  text-align: right;
+}
+
+.timeline-card {
+  padding: 0.95rem;
+  border: 1px solid var(--border);
+  border-radius: 1.15rem;
+  background: var(--surface-strong);
+}
+
+.timeline-topline {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.timeline-card h3 {
+  margin-bottom: 0.3rem;
+  font-size: 1rem;
+}
+
+.timeline-meta,
+.timeline-details {
+  margin-bottom: 0;
+  color: var(--muted);
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.timeline-meta {
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.timeline-details {
+  margin-top: 0.45rem;
+}
+
+@media (min-width: 40rem) {
+  .app-shell {
+    padding: 2rem;
+  }
+
+  .summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #111915;
+    --surface: #19231e;
+    --surface-strong: #223129;
+    --text: #eff7ef;
+    --muted: #a9b8ae;
+    --accent: #9bd0ad;
+    --accent-soft: #2c4537;
+    --border: rgba(239, 247, 239, 0.14);
+    --danger: #ff9a9a;
+    --shadow: 0 18px 45px rgba(0, 0, 0, 0.3);
+  }
+
+  .hero {
+    color: #102019;
+    background: linear-gradient(145deg, #9bd0ad, #77b68f);
+  }
+
+  .eyebrow,
+  .date-picker {
+    color: rgba(16, 32, 25, 0.72);
+  }
+
+  .date-picker input {
+    background: #eff7ef;
+    color: #102019;
+  }
+
+  .summary-card,
+  .panel {
+    background: rgba(25, 35, 30, 0.9);
+  }
+
+  .ghost-button {
+    color: var(--text);
+  }
+
+  .primary-button {
+    color: #102019;
+  }
+}
