@@ -3,14 +3,13 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#234236" />
+    <meta name="theme-color" content="#7c3aed" />
     <title>Health Journal</title>
-    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
     <main class="app-shell">
       <header class="hero">
-        <p class="eyebrow">Notice patterns. Feel better.</p>
         <h1>Health Journal</h1>
         <label class="date-picker">
           <span>Journal date</span>
@@ -19,14 +18,14 @@
       </header>
 
       <section class="summary-grid" aria-label="Today's summary">
-        <article class="summary-card">
+        <article class="summary-card drink-card">
           <span class="summary-icon">🥤</span>
           <div>
             <p class="summary-label">Drinks</p>
             <p id="drink-summary" class="summary-value">No drinks yet</p>
           </div>
         </article>
-        <article class="summary-card">
+        <article class="summary-card symptom-card">
           <span class="summary-icon">😊</span>
           <div>
             <p class="summary-label">Symptoms</p>
@@ -38,10 +37,10 @@
       <section class="panel">
         <h2>Quick add</h2>
         <div class="quick-actions">
-          <button class="action-card" data-open-form="meal">🍽<span>Add meal</span></button>
-          <button class="action-card" data-open-form="drink">🥤<span>Add drink</span></button>
-          <button class="action-card" data-open-form="symptom">😊<span>Log symptom</span></button>
-          <button class="action-card" data-open-form="checkin">📝<span>Daily check-in</span></button>
+          <button class="action-card meal-action" data-open-form="meal">🍽<span>Add meal</span></button>
+          <button class="action-card drink-action" data-open-form="drink">🥤<span>Add drink</span></button>
+          <button class="action-card symptom-action" data-open-form="symptom">😊<span>Log symptom</span></button>
+          <button class="action-card checkin-action" data-open-form="checkin">📝<span>Daily check-in</span></button>
         </div>
       </section>
 
@@ -116,6 +115,6 @@
       </article>
     </template>
 
-    <script src="/app.js" type="module"></script>
+    <script src="./app.js" type="module"></script>
   </body>
 </html>
