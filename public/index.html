@@ -18,27 +18,27 @@
       </header>
 
       <section class="summary-grid" aria-label="Today's summary">
-        <article class="summary-card meal-card">
+        <button class="summary-card meal-card" type="button" data-filter="meal">
           <span class="summary-icon">🍽</span>
           <div>
             <p class="summary-label">Meals</p>
             <p id="meal-summary" class="summary-value">No meals yet</p>
           </div>
-        </article>
-        <article class="summary-card drink-card">
+        </button>
+        <button class="summary-card drink-card" type="button" data-filter="drink">
           <span class="summary-icon">🥤</span>
           <div>
             <p class="summary-label">Drinks</p>
             <p id="drink-summary" class="summary-value">No drinks yet</p>
           </div>
-        </article>
-        <article class="summary-card symptom-card">
+        </button>
+        <button class="summary-card symptom-card" type="button" data-filter="symptom">
           <span class="summary-icon">😊</span>
           <div>
             <p class="summary-label">Symptoms</p>
             <p id="symptom-summary" class="summary-value">Nothing logged</p>
           </div>
-        </article>
+        </button>
       </section>
 
       <section class="panel">
@@ -114,8 +114,8 @@
 
       <section class="panel">
         <div class="panel-header">
-          <h2>Timeline</h2>
-          <button id="refresh" class="ghost-button" type="button">Refresh</button>
+          <h2 id="timeline-title">Timeline</h2>
+          <button id="show-all" class="ghost-button hidden" type="button">All</button>
         </div>
         <div id="timeline" class="timeline"></div>
       </section>
