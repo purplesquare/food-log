@@ -1,0 +1,18 @@
+{
+  "name": "food-log",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --local",
+    "deploy": "wrangler deploy",
+    "db:create": "wrangler d1 create food-log-db",
+    "db:migrate:local": "wrangler d1 migrations apply food-log-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply food-log-db --remote"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260617.0",
+    "typescript": "^5.8.3",
+    "wrangler": "^4.23.0"
+  }
+}
