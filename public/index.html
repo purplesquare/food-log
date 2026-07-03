@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#234236" />
+    <title>Health Journal</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="hero">
+        <p class="eyebrow">Notice patterns. Feel better.</p>
+        <h1>Health Journal</h1>
+        <label class="date-picker">
+          <span>Journal date</span>
+          <input id="journal-date" type="date" />
+        </label>
+      </header>
+
+      <section class="summary-grid" aria-label="Today's summary">
+        <article class="summary-card">
+          <span class="summary-icon">🥤</span>
+          <div>
+            <p class="summary-label">Drinks</p>
+            <p id="drink-summary" class="summary-value">No drinks yet</p>
+          </div>
+        </article>
+        <article class="summary-card">
+          <span class="summary-icon">😊</span>
+          <div>
+            <p class="summary-label">Symptoms</p>
+            <p id="symptom-summary" class="summary-value">Nothing logged</p>
+          </div>
+        </article>
+      </section>
+
+      <section class="panel">
+        <h2>Quick add</h2>
+        <div class="quick-actions">
+          <button class="action-card" data-open-form="meal">🍽<span>Add meal</span></button>
+          <button class="action-card" data-open-form="drink">🥤<span>Add drink</span></button>
+          <button class="action-card" data-open-form="symptom">😊<span>Log symptom</span></button>
+          <button class="action-card" data-open-form="checkin">📝<span>Daily check-in</span></button>
+        </div>
+      </section>
+
+      <section id="form-panel" class="panel hidden" aria-live="polite">
+        <div class="panel-header">
+          <h2 id="form-title">Add entry</h2>
+          <button id="close-form" class="ghost-button" type="button">Close</button>
+        </div>
+
+        <form id="entry-form">
+          <input id="entry-type" type="hidden" />
+
+          <label>
+            Time
+            <input id="entry-time" type="time" required />
+          </label>
+
+          <div id="drink-fields" class="hidden">
+            <p class="field-label">Drink</p>
+            <div id="drink-options" class="option-grid"></div>
+            <label>
+              Quantity (ml)
+              <input id="quantity-ml" type="number" min="1" step="1" inputmode="numeric" />
+            </label>
+          </div>
+
+          <div id="title-fields">
+            <label>
+              <span id="title-label">Title</span>
+              <input id="entry-title" type="text" placeholder="What would you like to remember?" />
+            </label>
+          </div>
+
+          <div id="rating-fields" class="hidden">
+            <label>
+              Rating: <strong><span id="rating-value">5</span>/10</strong>
+              <input id="entry-rating" type="range" min="0" max="10" value="5" />
+            </label>
+            <div class="rating-scale"><span>None</span><span>Severe</span></div>
+          </div>
+
+          <label>
+            Notes
+            <textarea id="entry-details" rows="4" placeholder="Add foods, symptoms, context, sleep, stress, or anything useful."></textarea>
+          </label>
+
+          <button class="primary-button" type="submit">Save to journal</button>
+          <p id="form-error" class="error-message" role="alert"></p>
+        </form>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Timeline</h2>
+          <button id="refresh" class="ghost-button" type="button">Refresh</button>
+        </div>
+        <div id="timeline" class="timeline"></div>
+      </section>
+    </main>
+
+    <template id="event-template">
+      <article class="timeline-item">
+        <div class="timeline-time"></div>
+        <div class="timeline-card">
+          <div class="timeline-topline">
+            <h3></h3>
+            <button class="delete-button" type="button">Delete</button>
+          </div>
+          <p class="timeline-meta"></p>
+          <p class="timeline-details"></p>
+        </div>
+      </article>
+    </template>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>
