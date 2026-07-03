@@ -1,5 +1,5 @@
 {
-  "name": "food-log",
+  "name": "health-journal",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -8,10 +8,15 @@
     "deploy": "wrangler deploy",
     "db:create": "wrangler d1 create food-log-db",
     "db:migrate:local": "wrangler d1 migrations apply food-log-db --local",
-    "db:migrate:remote": "wrangler d1 migrations apply food-log-db --remote"
+    "db:migrate:remote": "wrangler d1 migrations apply food-log-db --remote",
+    "serve:static": "http-server public -p 4173",
+    "test": "playwright test",
+    "test:headed": "playwright test --headed"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260617.0",
+    "@playwright/test": "^1.49.1",
+    "http-server": "^14.1.1",
     "typescript": "^5.8.3",
     "wrangler": "^4.23.0"
   }
