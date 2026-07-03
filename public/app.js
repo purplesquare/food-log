@@ -1,7 +1,16 @@
+const STORAGE_KEY = 'health-journal-events-v1';
+
+const defaultDrinks = [
+  { id: 1, name: 'Water', emoji: '💧', defaultQuantityMl: 250 },
+  { id: 2, name: 'Black Tea', emoji: '☕', defaultQuantityMl: 300 },
+  { id: 3, name: 'Rooibos', emoji: '🫖', defaultQuantityMl: 300 },
+  { id: 4, name: 'Coffee', emoji: '☕', defaultQuantityMl: 250 },
+];
+
 const state = {
   date: today(),
   entryType: 'meal',
-  drinks: [],
+  drinks: defaultDrinks,
   selectedDrink: null,
 };
 
@@ -67,7 +76,7 @@ const eventIcons = {
 
 init();
 
-async function init() {
+function init() {
   els.date.value = state.date;
   els.entryTime.value = currentTime();
 
@@ -88,14 +97,8 @@ async function init() {
 
   els.entryForm.addEventListener('submit', saveEntry);
 
-  await loadDrinks();
-  await loadDay();
-}
-
-async function loadDrinks() {
-  const data = await getJson('/api/drinks');
-  state.drinks = data.drinks || [];
   renderDrinkOptions();
+  loadDay();
 }
 
 function renderDrinkOptions() {
@@ -121,10 +124,49 @@ function selectDrink(drink) {
   });
 }
 
-async function loadDay() {
-  const data = await getJson(`/api/events?date=${encodeURIComponent(state.date)}`);
-  renderSummary(data.summary || {});
-  renderTimeline(data.events || []);
+function loadDay() {
+  const events = getEventsForDate(state.date);
+  renderSummary(buildSummary(events));
+  renderTimeline(events);
+}
+
+function getAllEvents() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  } catch {
+    return [];
+  }
+}
+
+function saveAllEvents(events) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+}
+
+function getEventsForDate(date) {
+  return getAllEvents()
+    .filter((event) => event.eventDate === date)
+    .sort((a, b) => a.eventTime.localeCompare(b.eventTime) || a.id - b.id);
+}
+
+function buildSummary(events) {
+  const drinkMap = new Map();
+  const symptomMap = new Map();
+
+  events.forEach((event) => {
+    if (event.eventType === 'drink') {
+      drinkMap.set(event.title, (drinkMap.get(event.title) || 0) + Number(event.quantityMl || 0));
+    }
+
+    if (event.eventType === 'symptom') {
+      const current = symptomMap.get(event.title) || 0;
+      symptomMap.set(event.title, Math.max(current, Number(event.rating || 0)));
+    }
+  });
+
+  return {
+    drinkTotals: [...drinkMap.entries()].map(([title, quantityMl]) => ({ title, quantityMl })),
+    symptoms: [...symptomMap.entries()].map(([title, highestRating]) => ({ title, highestRating })),
+  };
 }
 
 function renderSummary(summary) {
@@ -167,11 +209,11 @@ function renderTimeline(events) {
     details.hidden = !event.details;
     article.dataset.eventId = event.id;
 
-    deleteButton.addEventListener('click', async () => {
+    deleteButton.addEventListener('click', () => {
       const confirmed = window.confirm('Delete this journal entry?');
       if (!confirmed) return;
-      await fetch(`/api/events/${event.id}`, { method: 'DELETE' });
-      await loadDay();
+      saveAllEvents(getAllEvents().filter((item) => item.id !== event.id));
+      loadDay();
     });
 
     els.timeline.append(node);
@@ -233,17 +275,21 @@ function closeForm() {
   els.formPanel.classList.add('hidden');
 }
 
-async function saveEntry(event) {
+function saveEntry(event) {
   event.preventDefault();
   els.formError.textContent = '';
 
   const eventType = state.entryType;
   const payload = {
+    id: Date.now(),
     eventDate: state.date,
     eventTime: els.entryTime.value,
     eventType,
     title: els.entryTitle.value.trim(),
     details: els.entryDetails.value.trim(),
+    rating: null,
+    quantityMl: null,
+    createdAt: new Date().toISOString(),
   };
 
   if (eventType === 'drink') {
@@ -265,29 +311,9 @@ async function saveEntry(event) {
     return;
   }
 
-  const response = await fetch('/api/events', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-
-  const data = await response.json();
-  if (!response.ok) {
-    els.formError.textContent = data.error || 'Could not save this entry.';
-    return;
-  }
-
+  saveAllEvents([...getAllEvents(), payload]);
   closeForm();
-  await loadDay();
-}
-
-async function getJson(path) {
-  const response = await fetch(path);
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.error || 'Request failed');
-  }
-  return data;
+  loadDay();
 }
 
 function today() {
