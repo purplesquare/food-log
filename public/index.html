@@ -66,8 +66,15 @@
           </label>
 
           <div id="drink-fields" class="hidden">
-            <p class="field-label">Drink</p>
-            <div id="drink-options" class="option-grid"></div>
+            <label>
+              Drink
+              <select id="drink-name">
+                <option value="Water">💧 Water</option>
+                <option value="Black Tea">☕ Black Tea</option>
+                <option value="Rooibos">🫖 Rooibos</option>
+                <option value="Coffee">☕ Coffee</option>
+              </select>
+            </label>
             <label>
               Quantity (ml)
               <input id="quantity-ml" type="number" min="1" step="1" inputmode="numeric" />
