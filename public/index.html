@@ -11,10 +11,15 @@
     <main class="app-shell">
       <header class="hero">
         <h1>Health Journal</h1>
-        <label class="date-picker">
-          <span>Journal date</span>
-          <input id="journal-date" type="date" />
-        </label>
+        <div class="date-nav" aria-label="Journal date">
+          <input id="journal-date" class="visually-hidden-date" type="date" aria-label="Choose journal date" />
+          <button id="previous-day" class="date-nav-button" type="button" aria-label="Previous day">◀</button>
+          <button id="date-picker-trigger" class="date-label-button" type="button" aria-label="Choose journal date">
+            <span id="date-relative-label">Today</span>
+          </button>
+          <button id="next-day" class="date-nav-button" type="button" aria-label="Next day">▶</button>
+          <p id="selected-date-label" class="selected-date-label">Friday 4 July 2026</p>
+        </div>
       </header>
 
       <section class="summary-grid" aria-label="Today's summary">
