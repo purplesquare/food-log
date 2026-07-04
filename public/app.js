@@ -1,21 +1,13 @@
 const STORAGE_KEY = 'health-journal-events-v1';
 
-const defaultDrinks = [
-  { id: 1, name: 'Water', emoji: '💧', defaultQuantityMl: 250 },
-  { id: 2, name: 'Black Tea', emoji: '☕', defaultQuantityMl: 300 },
-  { id: 3, name: 'Rooibos', emoji: '🫖', defaultQuantityMl: 300 },
-  { id: 4, name: 'Coffee', emoji: '☕', defaultQuantityMl: 250 },
+const DRINKS = [
+  { name: 'Water', emoji: '💧', defaultQuantityMl: 250 },
+  { name: 'Black Tea', emoji: '☕', defaultQuantityMl: 300 },
+  { name: 'Rooibos', emoji: '🫖', defaultQuantityMl: 300 },
+  { name: 'Coffee', emoji: '☕', defaultQuantityMl: 250 },
 ];
 
-const state = {
-  date: today(),
-  entryType: 'meal',
-  drinks: defaultDrinks,
-  selectedDrink: null,
-  currentView: 'all',
-};
-
-const viewCopy = {
+const VIEWS = {
   all: {
     title: 'Timeline',
     empty: 'No entries yet. Add a meal, drink, symptom, or check-in to start your journal.',
@@ -34,38 +26,7 @@ const viewCopy = {
   },
 };
 
-const els = {
-  date: document.querySelector('#journal-date'),
-  mealSummary: document.querySelector('#meal-summary'),
-  drinkSummary: document.querySelector('#drink-summary'),
-  symptomSummary: document.querySelector('#symptom-summary'),
-  summaryCards: document.querySelectorAll('[data-filter]'),
-  formPanel: document.querySelector('#form-panel'),
-  formTitle: document.querySelector('#form-title'),
-  closeForm: document.querySelector('#close-form'),
-  entryForm: document.querySelector('#entry-form'),
-  entryType: document.querySelector('#entry-type'),
-  entryTime: document.querySelector('#entry-time'),
-  entryTitle: document.querySelector('#entry-title'),
-  titleLabel: document.querySelector('#title-label'),
-  titleFields: document.querySelector('#title-fields'),
-  mealFields: document.querySelector('#meal-fields'),
-  mealName: document.querySelector('#meal-name'),
-  entryDetails: document.querySelector('#entry-details'),
-  drinkFields: document.querySelector('#drink-fields'),
-  drinkOptions: document.querySelector('#drink-options'),
-  quantityMl: document.querySelector('#quantity-ml'),
-  ratingFields: document.querySelector('#rating-fields'),
-  entryRating: document.querySelector('#entry-rating'),
-  ratingValue: document.querySelector('#rating-value'),
-  formError: document.querySelector('#form-error'),
-  timelineTitle: document.querySelector('#timeline-title'),
-  showAll: document.querySelector('#show-all'),
-  timeline: document.querySelector('#timeline'),
-  template: document.querySelector('#event-template'),
-};
-
-const formCopy = {
+const FORM_COPY = {
   meal: {
     heading: 'Add meal',
     titleLabel: 'Other meal name',
@@ -92,20 +53,66 @@ const formCopy = {
   },
 };
 
-const eventIcons = {
+const ICONS = {
   meal: '🍽',
   drink: '🥤',
   symptom: '😊',
   checkin: '📝',
 };
 
+const state = {
+  date: today(),
+  entryType: 'meal',
+  selectedDrink: DRINKS[0],
+  currentView: 'all',
+};
+
+const els = collectElements();
+
 init();
+
+function collectElements() {
+  const qs = (selector) => document.querySelector(selector);
+  const qsa = (selector) => [...document.querySelectorAll(selector)];
+
+  return {
+    date: qs('#journal-date'),
+    mealSummary: qs('#meal-summary'),
+    drinkSummary: qs('#drink-summary'),
+    symptomSummary: qs('#symptom-summary'),
+    summaryCards: qsa('[data-filter]'),
+    formPanel: qs('#form-panel'),
+    formTitle: qs('#form-title'),
+    closeForm: qs('#close-form'),
+    entryForm: qs('#entry-form'),
+    entryType: qs('#entry-type'),
+    entryTime: qs('#entry-time'),
+    entryTitle: qs('#entry-title'),
+    titleLabel: qs('#title-label'),
+    titleFields: qs('#title-fields'),
+    mealFields: qs('#meal-fields'),
+    mealName: qs('#meal-name'),
+    entryDetails: qs('#entry-details'),
+    drinkFields: qs('#drink-fields'),
+    drinkOptions: qs('#drink-options'),
+    quantityMl: qs('#quantity-ml'),
+    ratingFields: qs('#rating-fields'),
+    entryRating: qs('#entry-rating'),
+    ratingValue: qs('#rating-value'),
+    formError: qs('#form-error'),
+    timelineTitle: qs('#timeline-title'),
+    showAll: qs('#show-all'),
+    timeline: qs('#timeline'),
+    template: qs('#event-template'),
+    openButtons: qsa('[data-open-form]'),
+  };
+}
 
 function init() {
   els.date.value = state.date;
   els.entryTime.value = currentTime();
 
-  document.querySelectorAll('[data-open-form]').forEach((button) => {
+  els.openButtons.forEach((button) => {
     button.addEventListener('click', () => openForm(button.dataset.openForm));
   });
 
@@ -117,27 +124,100 @@ function init() {
   els.closeForm.addEventListener('click', closeForm);
   els.date.addEventListener('change', () => {
     state.date = els.date.value || today();
-    loadDay();
+    renderApp();
   });
 
   els.mealName.addEventListener('change', updateMealTitleVisibility);
   els.entryRating.addEventListener('input', () => {
     els.ratingValue.textContent = els.entryRating.value;
   });
-
   els.entryForm.addEventListener('submit', saveEntry);
 
-  renderDrinkOptions();
-  loadDay();
+  renderDrinkButtons();
+  renderApp();
 }
 
-function renderDrinkOptions() {
+function readEvents() {
+  try {
+    const events = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    return Array.isArray(events) ? events : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeEvents(events) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+}
+
+function getEventsForSelectedDate() {
+  return readEvents()
+    .filter((event) => event.eventDate === state.date)
+    .sort((a, b) => a.eventTime.localeCompare(b.eventTime) || a.id - b.id);
+}
+
+function addEvent(entry) {
+  writeEvents([...readEvents(), entry]);
+}
+
+function deleteEvent(id) {
+  writeEvents(readEvents().filter((event) => event.id !== id));
+}
+
+function renderApp() {
+  const events = getEventsForSelectedDate();
+  renderSummaries(events);
+  renderTimeline(events);
+}
+
+function renderSummaries(events) {
+  const summary = buildSummary(events);
+
+  els.mealSummary.textContent = summary.meals.length ? compactList(summary.meals) : 'No meals yet';
+
+  els.drinkSummary.textContent = summary.drinks.length
+    ? summary.drinks.map((drink) => `${drink.title}: ${formatMl(drink.quantityMl)}`).join(' · ')
+    : 'No drinks yet';
+
+  els.symptomSummary.textContent = summary.symptoms.length
+    ? summary.symptoms.map((symptom) => `${symptom.title}: ${symptom.highestRating}/10`).join(' · ')
+    : 'Nothing logged';
+}
+
+function buildSummary(events) {
+  const meals = [];
+  const drinkMap = new Map();
+  const symptomMap = new Map();
+
+  events.forEach((event) => {
+    if (event.eventType === 'meal') {
+      meals.push(event.title);
+    }
+
+    if (event.eventType === 'drink') {
+      drinkMap.set(event.title, (drinkMap.get(event.title) || 0) + Number(event.quantityMl || 0));
+    }
+
+    if (event.eventType === 'symptom') {
+      symptomMap.set(event.title, Math.max(symptomMap.get(event.title) || 0, Number(event.rating || 0)));
+    }
+  });
+
+  return {
+    meals,
+    drinks: [...drinkMap.entries()].map(([title, quantityMl]) => ({ title, quantityMl })),
+    symptoms: [...symptomMap.entries()].map(([title, highestRating]) => ({ title, highestRating })),
+  };
+}
+
+function renderDrinkButtons() {
   els.drinkOptions.innerHTML = '';
 
-  state.drinks.forEach((drink) => {
+  DRINKS.forEach((drink) => {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'option-button';
+    button.dataset.drink = drink.name;
     button.textContent = `${drink.emoji} ${drink.name}`;
     button.addEventListener('click', () => selectDrink(drink));
     els.drinkOptions.append(button);
@@ -146,101 +226,28 @@ function renderDrinkOptions() {
 
 function selectDrink(drink) {
   state.selectedDrink = drink;
-  els.entryTitle.value = drink.name;
   els.quantityMl.value = drink.defaultQuantityMl;
 
   [...els.drinkOptions.children].forEach((button) => {
-    button.classList.toggle('selected', button.textContent.includes(drink.name));
+    button.classList.toggle('selected', button.dataset.drink === drink.name);
   });
 }
 
 function setView(view) {
   state.currentView = view || 'all';
-  loadDay();
+  renderApp();
   els.timeline.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-function loadDay() {
-  const events = getEventsForDate(state.date);
-  renderSummary(buildSummary(events));
-  renderTimeline(events);
-}
-
-function getAllEvents() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-  } catch {
-    return [];
-  }
-}
-
-function saveAllEvents(events) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
-}
-
-function getEventsForDate(date) {
-  return getAllEvents()
-    .filter((event) => event.eventDate === date)
-    .sort((a, b) => a.eventTime.localeCompare(b.eventTime) || a.id - b.id);
-}
-
-function buildSummary(events) {
-  const mealNames = [];
-  const drinkMap = new Map();
-  const symptomMap = new Map();
-
-  events.forEach((event) => {
-    if (event.eventType === 'meal') {
-      mealNames.push(event.title);
-    }
-
-    if (event.eventType === 'drink') {
-      drinkMap.set(event.title, (drinkMap.get(event.title) || 0) + Number(event.quantityMl || 0));
-    }
-
-    if (event.eventType === 'symptom') {
-      const current = symptomMap.get(event.title) || 0;
-      symptomMap.set(event.title, Math.max(current, Number(event.rating || 0)));
-    }
-  });
-
-  return {
-    meals: mealNames,
-    drinkTotals: [...drinkMap.entries()].map(([title, quantityMl]) => ({ title, quantityMl })),
-    symptoms: [...symptomMap.entries()].map(([title, highestRating]) => ({ title, highestRating })),
-  };
-}
-
-function renderSummary(summary) {
-  const meals = summary.meals || [];
-  const drinkTotals = summary.drinkTotals || [];
-  const symptoms = summary.symptoms || [];
-
-  els.mealSummary.textContent = meals.length ? compactList(meals) : 'No meals yet';
-
-  els.drinkSummary.textContent = drinkTotals.length
-    ? drinkTotals.map((drink) => `${drink.title}: ${formatMl(drink.quantityMl)}`).join(' · ')
-    : 'No drinks yet';
-
-  els.symptomSummary.textContent = symptoms.length
-    ? symptoms.map((symptom) => `${symptom.title}: ${symptom.highestRating}/10`).join(' · ')
-    : 'Nothing logged';
-}
-
-function compactList(items) {
-  const visible = items.slice(0, 3);
-  const remaining = items.length - visible.length;
-  return `${visible.join(' • ')}${remaining > 0 ? ` +${remaining} more` : ''}`;
-}
-
 function renderTimeline(events) {
-  const view = viewCopy[state.currentView] || viewCopy.all;
+  const view = VIEWS[state.currentView] || VIEWS.all;
   const visibleEvents = state.currentView === 'all'
     ? events
     : events.filter((event) => event.eventType === state.currentView);
 
   els.timelineTitle.textContent = view.title;
   els.showAll.classList.toggle('hidden', state.currentView === 'all');
+
   els.summaryCards.forEach((card) => {
     card.classList.toggle('selected-summary', card.dataset.filter === state.currentView);
   });
@@ -256,46 +263,45 @@ function renderTimeline(events) {
   }
 
   visibleEvents.forEach((event) => {
-    const node = els.template.content.cloneNode(true);
-    const article = node.querySelector('.timeline-item');
-    const time = node.querySelector('.timeline-time');
-    const title = node.querySelector('h3');
-    const meta = node.querySelector('.timeline-meta');
-    const details = node.querySelector('.timeline-details');
-    const deleteButton = node.querySelector('.delete-button');
-
-    time.textContent = event.eventTime;
-    title.textContent = formatEventTitle(event);
-    meta.textContent = describeMeta(event);
-    details.textContent = event.details || '';
-    details.hidden = !event.details;
-    article.dataset.eventId = event.id;
-
-    deleteButton.addEventListener('click', () => {
-      const confirmed = window.confirm('Delete this journal entry?');
-      if (!confirmed) return;
-      saveAllEvents(getAllEvents().filter((item) => item.id !== event.id));
-      loadDay();
-    });
-
-    els.timeline.append(node);
+    els.timeline.append(createTimelineItem(event));
   });
 }
 
+function createTimelineItem(event) {
+  const node = els.template.content.cloneNode(true);
+  const article = node.querySelector('.timeline-item');
+  const time = node.querySelector('.timeline-time');
+  const title = node.querySelector('h3');
+  const meta = node.querySelector('.timeline-meta');
+  const details = node.querySelector('.timeline-details');
+  const deleteButton = node.querySelector('.delete-button');
+
+  time.textContent = event.eventTime;
+  title.textContent = formatEventTitle(event);
+  meta.textContent = describeMeta(event);
+  details.textContent = event.details || '';
+  details.hidden = !event.details;
+  article.dataset.eventId = event.id;
+
+  deleteButton.addEventListener('click', () => {
+    if (!window.confirm('Delete this journal entry?')) return;
+    deleteEvent(event.id);
+    renderApp();
+  });
+
+  return node;
+}
+
 function formatEventTitle(event) {
-  if (state.currentView === 'all') {
-    return `${eventIcons[event.eventType] || '•'} ${event.title}`;
+  if (state.currentView === 'drink' && event.eventType === 'drink') {
+    return `${ICONS.drink} ${event.title}${event.quantityMl ? ` · ${formatMl(event.quantityMl)}` : ''}`;
   }
 
-  if (event.eventType === 'drink') {
-    return `${eventIcons.drink} ${event.title}${event.quantityMl ? ` · ${formatMl(event.quantityMl)}` : ''}`;
+  if (state.currentView === 'symptom' && event.eventType === 'symptom') {
+    return `${ICONS.symptom} ${event.title}${event.rating !== null && event.rating !== undefined ? ` · ${event.rating}/10` : ''}`;
   }
 
-  if (event.eventType === 'symptom') {
-    return `${eventIcons.symptom} ${event.title}${event.rating !== null && event.rating !== undefined ? ` · ${event.rating}/10` : ''}`;
-  }
-
-  return `${eventIcons[event.eventType] || '•'} ${event.title}`;
+  return `${ICONS[event.eventType] || '•'} ${event.title}`;
 }
 
 function describeMeta(event) {
@@ -311,18 +317,8 @@ function describeMeta(event) {
   return pieces.join(' · ');
 }
 
-function labelForType(type) {
-  return {
-    meal: 'Meal',
-    drink: 'Drink',
-    symptom: 'Symptom',
-    checkin: 'Daily check-in',
-  }[type] || 'Entry';
-}
-
 function openForm(type) {
   state.entryType = type;
-  state.selectedDrink = null;
   els.entryForm.reset();
   els.formError.textContent = '';
   els.entryType.value = type;
@@ -330,7 +326,7 @@ function openForm(type) {
   els.entryRating.value = '5';
   els.ratingValue.textContent = '5';
 
-  const copy = formCopy[type];
+  const copy = FORM_COPY[type];
   els.formTitle.textContent = copy.heading;
   els.titleLabel.textContent = copy.titleLabel;
   els.entryTitle.placeholder = copy.placeholder;
@@ -339,12 +335,10 @@ function openForm(type) {
   els.mealFields.classList.toggle('hidden', type !== 'meal');
   els.drinkFields.classList.toggle('hidden', type !== 'drink');
   els.ratingFields.classList.toggle('hidden', !['symptom', 'checkin'].includes(type));
-  els.titleFields.classList.toggle('hidden', type === 'drink' || type === 'meal');
+  els.titleFields.classList.toggle('hidden', type === 'meal' || type === 'drink');
 
-  [...els.drinkOptions.children].forEach((button) => button.classList.remove('selected'));
-
-  if (type === 'drink' && state.drinks[0]) {
-    selectDrink(state.drinks[0]);
+  if (type === 'drink') {
+    selectDrink(DRINKS[0]);
   }
 
   if (type === 'meal') {
@@ -377,12 +371,24 @@ function saveEntry(event) {
   event.preventDefault();
   els.formError.textContent = '';
 
-  const eventType = state.entryType;
-  const payload = {
+  const entry = buildEntryFromForm();
+
+  if (!entry.title) {
+    els.formError.textContent = 'Add a title before saving.';
+    return;
+  }
+
+  addEvent(entry);
+  closeForm();
+  renderApp();
+}
+
+function buildEntryFromForm() {
+  const entry = {
     id: Date.now(),
     eventDate: state.date,
     eventTime: els.entryTime.value,
-    eventType,
+    eventType: state.entryType,
     title: els.entryTitle.value.trim(),
     details: els.entryDetails.value.trim(),
     rating: null,
@@ -390,32 +396,35 @@ function saveEntry(event) {
     createdAt: new Date().toISOString(),
   };
 
-  if (eventType === 'meal') {
-    payload.title = els.mealName.value === 'Other' ? els.entryTitle.value.trim() : els.mealName.value;
+  if (state.entryType === 'meal') {
+    entry.title = els.mealName.value === 'Other' ? els.entryTitle.value.trim() : els.mealName.value;
   }
 
-  if (eventType === 'drink') {
-    if (!state.selectedDrink) {
-      els.formError.textContent = 'Choose a drink.';
-      return;
-    }
-
-    payload.title = state.selectedDrink.name;
-    payload.quantityMl = Number(els.quantityMl.value || state.selectedDrink.defaultQuantityMl);
+  if (state.entryType === 'drink') {
+    entry.title = state.selectedDrink.name;
+    entry.quantityMl = Number(els.quantityMl.value || state.selectedDrink.defaultQuantityMl);
   }
 
-  if (['symptom', 'checkin'].includes(eventType)) {
-    payload.rating = Number(els.entryRating.value);
+  if (['symptom', 'checkin'].includes(state.entryType)) {
+    entry.rating = Number(els.entryRating.value);
   }
 
-  if (!payload.title) {
-    els.formError.textContent = 'Add a title before saving.';
-    return;
-  }
+  return entry;
+}
 
-  saveAllEvents([...getAllEvents(), payload]);
-  closeForm();
-  loadDay();
+function compactList(items) {
+  const visible = items.slice(0, 3);
+  const remaining = items.length - visible.length;
+  return `${visible.join(' • ')}${remaining > 0 ? ` +${remaining} more` : ''}`;
+}
+
+function labelForType(type) {
+  return {
+    meal: 'Meal',
+    drink: 'Drink',
+    symptom: 'Symptom',
+    checkin: 'Daily check-in',
+  }[type] || 'Entry';
 }
 
 function today() {
