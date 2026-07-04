@@ -1,4 +1,5 @@
 const STORAGE_KEY = 'health-journal-events-v1';
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 const DRINKS = [
   { name: 'Water', emoji: '💧', defaultQuantityMl: 250 },
@@ -65,6 +66,7 @@ const state = {
   entryType: 'meal',
   selectedDrink: DRINKS[0],
   currentView: 'all',
+  transitionDirection: null,
 };
 
 const els = collectElements();
@@ -77,6 +79,11 @@ function collectElements() {
 
   return {
     date: qs('#journal-date'),
+    previousDay: qs('#previous-day'),
+    nextDay: qs('#next-day'),
+    datePickerTrigger: qs('#date-picker-trigger'),
+    dateRelativeLabel: qs('#date-relative-label'),
+    selectedDateLabel: qs('#selected-date-label'),
     mealSummary: qs('#meal-summary'),
     drinkSummary: qs('#drink-summary'),
     symptomSummary: qs('#symptom-summary'),
@@ -110,6 +117,7 @@ function collectElements() {
 
 function init() {
   els.date.value = state.date;
+  els.date.max = today();
   els.entryTime.value = currentTime();
 
   els.openButtons.forEach((button) => {
@@ -120,11 +128,13 @@ function init() {
     card.addEventListener('click', () => setView(card.dataset.filter));
   });
 
+  els.previousDay.addEventListener('click', () => changeDay(-1));
+  els.nextDay.addEventListener('click', () => changeDay(1));
+  els.datePickerTrigger.addEventListener('click', openNativeDatePicker);
   els.showAll.addEventListener('click', () => setView('all'));
   els.closeForm.addEventListener('click', closeForm);
   els.date.addEventListener('change', () => {
-    state.date = els.date.value || today();
-    renderApp();
+    setSelectedDate(els.date.value || today());
   });
 
   els.mealName.addEventListener('change', updateMealTitleVisibility);
@@ -166,8 +176,47 @@ function deleteEvent(id) {
 
 function renderApp() {
   const events = getEventsForSelectedDate();
+  renderDateHeader();
   renderSummaries(events);
   renderTimeline(events);
+}
+
+function renderDateHeader() {
+  const currentToday = today();
+  els.date.value = state.date;
+  els.date.max = currentToday;
+  els.dateRelativeLabel.textContent = relativeDateLabel(state.date);
+  els.selectedDateLabel.textContent = fullDateLabel(state.date);
+  els.nextDay.disabled = state.date >= currentToday;
+}
+
+function changeDay(offset) {
+  const nextDate = dateValue(addDays(parseDateValue(state.date), offset));
+  setSelectedDate(nextDate, offset > 0 ? 'left' : 'right');
+}
+
+function setSelectedDate(dateString, direction = null) {
+  const currentToday = today();
+  const nextDate = dateString > currentToday ? currentToday : dateString;
+
+  if (nextDate === state.date) {
+    renderDateHeader();
+    return;
+  }
+
+  state.date = nextDate;
+  state.transitionDirection = direction;
+  renderApp();
+}
+
+function openNativeDatePicker() {
+  if (typeof els.date.showPicker === 'function') {
+    els.date.showPicker();
+    return;
+  }
+
+  els.date.focus();
+  els.date.click();
 }
 
 function renderSummaries(events) {
@@ -259,12 +308,26 @@ function renderTimeline(events) {
     empty.className = 'empty-state';
     empty.textContent = view.empty;
     els.timeline.append(empty);
+    animateTimeline();
     return;
   }
 
   visibleEvents.forEach((event) => {
     els.timeline.append(createTimelineItem(event));
   });
+
+  animateTimeline();
+}
+
+function animateTimeline() {
+  const direction = state.transitionDirection;
+  state.transitionDirection = null;
+
+  if (!direction) return;
+
+  els.timeline.classList.remove('slide-left', 'slide-right');
+  void els.timeline.offsetWidth;
+  els.timeline.classList.add(direction === 'left' ? 'slide-left' : 'slide-right');
 }
 
 function createTimelineItem(event) {
@@ -428,11 +491,57 @@ function labelForType(type) {
 }
 
 function today() {
-  return new Date().toISOString().slice(0, 10);
+  return dateValue(new Date());
 }
 
 function currentTime() {
   return new Date().toTimeString().slice(0, 5);
+}
+
+function parseDateValue(value) {
+  const [year, month, day] = value.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function dateValue(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function addDays(date, days) {
+  const nextDate = new Date(date);
+  nextDate.setDate(nextDate.getDate() + days);
+  return nextDate;
+}
+
+function dayDifference(dateString, comparison = today()) {
+  const selected = parseDateValue(dateString);
+  const target = parseDateValue(comparison);
+  return Math.round((selected - target) / DAY_MS);
+}
+
+function relativeDateLabel(dateString) {
+  const difference = dayDifference(dateString);
+
+  if (difference === 0) return 'Today';
+  if (difference === -1) return 'Yesterday';
+  if (difference === 1) return 'Tomorrow';
+
+  return new Intl.DateTimeFormat('en-GB', {
+    day: 'numeric',
+    month: 'short',
+  }).format(parseDateValue(dateString));
+}
+
+function fullDateLabel(dateString) {
+  return new Intl.DateTimeFormat('en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(parseDateValue(dateString));
 }
 
 function formatMl(value) {
