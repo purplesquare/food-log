@@ -21,10 +21,18 @@ async function addDrink(page, drink = 'Black Tea') {
   await page.getByRole('button', { name: /^save$/i }).click();
 }
 
+async function setRating(page, value) {
+  await page.locator('#entry-rating').evaluate((input, nextValue) => {
+    input.value = nextValue;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  }, String(value));
+}
+
 async function addSymptom(page, symptom = 'Bloating') {
   await page.getByRole('button', { name: /log symptom/i }).click();
   await page.locator('#entry-title').fill(symptom);
-  await page.locator('#entry-rating').fill('6');
+  await setRating(page, 6);
   await page.locator('#entry-details').fill('Felt uncomfortable after lunch');
   await page.getByRole('button', { name: /^save$/i }).click();
 }
@@ -73,7 +81,7 @@ test('summary cards open dedicated views and All returns to full timeline', asyn
   await addDrink(page, 'Coffee');
   await addSymptom(page, 'Sluggishness');
 
-  await page.getByRole('button', { name: /meals/i }).click();
+  await page.locator('[data-filter="meal"]').click();
   await expect(page.locator('#timeline-title')).toHaveText('Meals');
   await expect(page.locator('#timeline')).toContainText('Lunch');
   await expect(page.locator('#timeline')).not.toContainText('Coffee');
@@ -84,12 +92,12 @@ test('summary cards open dedicated views and All returns to full timeline', asyn
   await expect(page.locator('#timeline')).toContainText('Coffee');
   await expect(page.locator('#timeline')).toContainText('Sluggishness');
 
-  await page.getByRole('button', { name: /drinks/i }).click();
+  await page.locator('[data-filter="drink"]').click();
   await expect(page.locator('#timeline-title')).toHaveText('Drinks');
   await expect(page.locator('#timeline')).toContainText('Coffee');
   await expect(page.locator('#timeline')).not.toContainText('Lunch');
 
-  await page.getByRole('button', { name: /symptoms/i }).click();
+  await page.locator('[data-filter="symptom"]').click();
   await expect(page.locator('#timeline-title')).toHaveText('Symptoms');
   await expect(page.locator('#timeline')).toContainText('Sluggishness');
   await expect(page.locator('#timeline')).not.toContainText('Coffee');
